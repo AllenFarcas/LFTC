@@ -3,7 +3,7 @@
 #include <string.h>
 #define SAFEALLOC(var,Type) if((var=(Type*)malloc(sizeof(Type)))==NULL)err("not enough memory");
 
-enum {COMMA,SEMICOLON,LPAR,RPAR,LBRACKET,RBRACKET,LACC,RACC,EQUAL,ASSIGN,NOTEQ,NOT,LESSEQ,LESS,GREATEREQ, GREATER,ADD,SUB,MUL,DOT,AND,OR,ID,CT_INT,CT_REAL,CT_CHAR,CT_STRING}; // codurile AL
+enum {COMMA,SEMICOLON,LPAR,RPAR,LBRACKET,RBRACKET,LACC,RACC,EQUAL,ASSIGN,NOTEQ,NOT,LESSEQ,LESS,GREATEREQ, GREATER,ADD,SUB,MUL,DOT,AND,OR,ID,CT_INT,CT_REAL,CT_CHAR,CT_STRING,END}; // codurile AL
 typedef struct _Token {
     int code; // codul (numele)
     union
@@ -12,15 +12,21 @@ typedef struct _Token {
         long int i; // folosit pentru CT_INT, CT_CHAR
         double r; // folosit pentru CT_REAL
     };
-int line; // linia din fisierul de intrare
-struct _Token *next;// inlantuire la urmatorul AL
+    int line; // linia din fisierul de intrare
+    struct _Token *next;// inlantuire la urmatorul AL
 }Token;
+//=======GLOBAL VARIABLES==========
+const char *pStartCh;
+Token *tokens;
+Token *lastToken;
+int lineText;
 
+//===========FUNCTIONS=============
 Token *addTk(int code) {
     Token *tk;
     SAFEALLOC(tk,Token)
     tk->code=code;
-    tk->line=line;
+    tk->line=lineText;
     tk->next=NULL;
     if(lastToken){
         lastToken->next=tk;
@@ -29,6 +35,16 @@ Token *addTk(int code) {
     }
     lastToken = tk;
     return tk;
+}
+
+char* createString(char *start, char *stop) {
+    char *c;
+    int n;
+    n = stop-start;
+    c = (char *)malloc(sizeof(char)*n+1);
+    c = strncpy(c,start,sizeof(char)*n);
+    c[n+1] = '\0';
+    return c;
 }
 
 void err(const char *fmt,...) {
@@ -55,9 +71,7 @@ int getNextToken() {
     int state = 0;
     int nCh;
     char ch;
-    const char *pStartCh;
     Token *tk;
-    
     while(1) {
         ch = *pCrtCh;
         switch(state){
