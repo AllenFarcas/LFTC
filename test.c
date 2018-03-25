@@ -13,15 +13,18 @@ char* createString(char *start, char *stop) {
 }
 
 int main() {
-    char s[50] = "abcde00010fghij";
+    char s[50] = "abcde15.30fghij";
     char *point = s+5;
     char *stop = s+10;
     char *c = createString(point,stop);
-    puts(c);
+    puts(c); // 00010
     stop = stop+1;
-    long b2 = strtol(c,NULL,8);
-    int a = atoi(c);
-    int b = 10+a;
-    printf("%d\n",a);
-    printf("%ld\n",b2);
+    int b2 = strtol(c,NULL,16);
+    char c1 = *c;
+    double doub = atof(c);
+    //putchar(c1);
+    printf("%lf",doub);
+    //int a = atoi(c);
+   // printf("%d\n",a); //10
+    //printf("%d\n",b2); //8
 }
