@@ -8,6 +8,7 @@ void err(const char *fmt,...);
 void printTk(int tkn);
 
 #define SAFEALLOC(var,Type) if((var=(Type*)malloc(sizeof(Type)))==NULL)err("not enough memory");
+#define LIMIT 2500
 
 enum { COMMA, SEMICOLON,
        LPAR, RPAR,
@@ -51,6 +52,7 @@ Token *tokens;
 Token *lastToken;
 int lineText=0;
 char *pCrtCh;
+int limit = 0;
 
 //===========FUNCTIONS=============
 Token *addTk(int code) {
@@ -759,22 +761,34 @@ int getNextToken() {
             case 54 :
                 if(ch!='*') {
                     state = 54;
+                    limit++;
+                    if(limit==LIMIT) {
+                        state = 57;
+                        printf("EROARE : blocat in comentariu /* \n");
+                        limit=0; //reseteaza limita
+                    }
                     pCrtCh++; //consuma caracter
                 } else if(ch == '*') {
                     state = 55;
                     pCrtCh++; //consuma caracter
+                } else {
+                    state = 57;
+                    printf("EROARE : blocat in comentariu /* \n");
                 }
                 break;
             case 55 :
                 if (ch == '*') {
                     state = 55;
                     pCrtCh++; //consuma caracter
-                } else if (ch!='*') {
-                    state = 54;
-                    pCrtCh++; //consuma caracter
                 } else if (ch=='/') {
                     state = 0;
                     pCrtCh++; //consuma caracter
+                } else if (ch!='*' || ch!='/') {
+                    state = 54;
+                    pCrtCh++; //consuma caracter
+                } else {
+                    state = 57;
+                    printf("EROARE : blocat in comentariu /* \n");
                 }
                 break;
             case 56 :
