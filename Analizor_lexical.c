@@ -8,7 +8,6 @@ void err(const char *fmt,...);
 void printTk(int tkn);
 
 #define SAFEALLOC(var,Type) if((var=(Type*)malloc(sizeof(Type)))==NULL)err("not enough memory");
-#define LIMIT 2500
 
 enum { COMMA, SEMICOLON,
        LPAR, RPAR,
@@ -345,6 +344,7 @@ int getNextToken() {
                     pCrtCh++; //consuma caracter
                 } else if ('\"'==ch) {
                     state = 48;
+                    pStartCh = pCrtCh;
                     pCrtCh++;//consuma caracter
                 } else if (ch == ' ' || ch=='\n' || ch=='\r' || ch=='\t') {
                     state = 0;
@@ -731,6 +731,9 @@ int getNextToken() {
                 if (ch=='\"') {
                     state = 51;
                     pCrtCh++; //consuma caracter
+                } else {
+                    state = 48;
+                    //nu se consuma caracter
                 }
                 break;
             case 51 : //============================================CT_STRING========//
@@ -761,11 +764,9 @@ int getNextToken() {
             case 54 :
                 if(ch!='*') {
                     state = 54;
-                    limit++;
-                    if(limit==LIMIT) {
+                    if(ch=='\0') {
                         state = 57;
                         printf("EROARE : blocat in comentariu /* \n");
-                        limit=0; //reseteaza limita
                     }
                     pCrtCh++; //consuma caracter
                 } else if(ch == '*') {
@@ -807,7 +808,7 @@ int main() {
     int a;
     char *buff;
     int i=0;
-    buff = (char *)malloc(sizeof(char)*1000);
+    buff = (char *)malloc(sizeof(char)*10000);
     if ((fin = fopen("fisier.txt", "r")) == NULL)
     {
         printf("ERROR opening the file!\n");

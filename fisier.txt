@@ -4,5 +4,6 @@ int sum()
 	int b=017;
 	int c=0xAFd9;
 	//int d=08;
-	/*int f=0xG; 
+	/*int f=0xG; */
+	put_s("comentariu");
 }
