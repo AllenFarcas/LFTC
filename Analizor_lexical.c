@@ -872,7 +872,7 @@ int unit() {
     }
     if(consume(END)) {
         return 1;
-    }
+    } else tkerr(crtTk,"Lipseste END");
     crtTk = initialTk;
     return 0;
 }
@@ -889,10 +889,10 @@ int declStruct(){
                 if(consume(RACC)){
                     if(consume(SEMICOLON)){
                         return 1;
-                    }
-                }
-            }
-        }
+                    } else tkerr(crtTk,"Lipseste ;");
+                } else tkerr(crtTk,"Lipseste }");
+            } else tkerr(crtTk,"Lipseste {");
+        } else tkerr(crtTk,"Lipseste ID");
     }
     crtTk = initialTk;
     return 0;
@@ -900,10 +900,263 @@ int declStruct(){
 
 int declVar(){
     Token *initialTk = crtTk;
-    //insert code
+    if(typeBase()){
+        if(consume(ID)){
+            arrayDecl();
+            for(;;){
+                if(consume(COMMA)){
+                    if(consume(ID)){
+                        arrayDecl();
+                    } else tkerr(crtTk,"Lipseste ID");
+                } else break;
+            }
+            if(consume(SEMICOLON)){
+                return 1;
+            } else tkerr(crtTk,"Lipseste ;");
+        } else tkerr(crtTk,"Lipseste ID");
+    }
     crtTk = initialTk;
     return 0;
 }
+
+int typeBase(){
+    Token *initialTk = crtTk;
+    if(typeBase()){
+        if(consume(INT)){}
+        else if(consume(DOUBLE)){}
+        else if(consume(CHAR)){}
+        else if(consume(STRUCT){
+            if(consume(ID)){
+                return 1;
+            } else tkerr(crtTk,"Lipseste ID");
+        } else tkerr(crtTk,"Tipul precizat nu exista");
+        
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+int arrayDecl(){
+    Token *initialTk = crtTk;
+    if(consume(LBRACKET)){
+        expr();
+        if(consume(RBRACKET)){
+            return 1;
+        } else tkerr(crtTk,"Lipseste ]");
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+int typeName(){
+    Token *initialTk = crtTk;
+    if(typeBase()){
+        arrayDecl();
+        return 1;
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+int declFunc(){
+    Token *initialTk = crtTk;
+    int flag=0;
+    if(typeBase()){
+        consume(MUL);
+        flag=1;
+    } else if (consume(VOID)){
+        flag=1;
+    }
+    if(flag==0){  
+        crtTk = initialTk;
+        return 0;
+    } 
+    if(consume(ID)){
+        if(consume(LPAR)){
+            if(funcArg()){
+                for(;;){
+                    if(consume(COMMA)){
+                        if(funcArg()){}
+                        else tkerr(crtTk,"lipseste argument dupa ,");
+                    } else break;
+                }
+            }
+            if(consume(RPAR)){
+                return 1;
+            } else tkerr(crtTk,"Lipseste )");
+        } else tkerr(crtTk,"Lipseste (");
+    } else tkerr(crtTk,"Lipseste ID");
+    crtTk = initialTk;
+    return 0;
+}
+
+int funcArg(){
+    Token *initialTk = crtTk;
+    if(typeBase()){
+        if(consume(ID)){
+            arrayDecl();
+        } else tkerr(crtTk,"Lipseste ID");
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+int stm(){
+    Token *initialTk = crtTk;
+    if(stmCompound()){}
+    else if(consume(IF)){
+        if(consume(LPAR)){
+            if(expr()){
+                if(consume(RPAR)){
+                    if(stm()){
+                        if(consume(ELSE)){
+                            if(stm()){
+                                return 1;
+                            } else tkerr(crtTk,"Lipseste stm in ramura ELSE");
+                        }
+                        return 1;
+                    } else tkerr(crtTk,"Lipseste stm in ramura de IF");
+                } else tkerr(crtTk,"Lipseste ) dupa IF");
+            } else tkerr(crtTk,"Lipseste conditia pentru IF");
+        } else tkerr(crtTk,"Lipseste ( dupa IF");
+    } else if(consume(WHILE)){
+        if(consume(LPAR)){
+            if(expr()){
+                if(consume(RPAR)){
+                    if(stm()){
+                        return 1;
+                    } else tkerr(crtTk,"Lipseste stm in WHILE");
+                } else tkerr(crtTk,"Lipseste ) dupa WHILE");
+            } else tkerr(crtTk,"Lipseste conditia pentru WHILE");
+        } else tkerr(crtTk,"Lipseste ( dupa WHILE");
+    } else if(consume(FOR)){
+        if(consume(LPAR)){
+            consume(expr));
+            if(consume(SEMICOLON)){
+                consume(expr);
+                if(consume(SEMICOLON)){
+                    consume(expr);
+                    if(consume(RPAR)){
+                        if(consume(stm())){
+                            return 1;
+                        } else tkerr(crtTk,"Lipseste stm in FOR");
+                    } else tkerr(crtTk,"Lipseste ) dupa FOR");
+                } else tkerr(crtTk,"Lipseste ; in stm al FOR");
+            } else tkerr(crtTk,"Lipseste ; in stm al FOR");
+        } else tkerr(crtTk,"Lipseste ( dupa FOR");
+    } else if(consume(BREAK)){
+        if(consume(SEMICOLON)){
+            return 1;
+        } else tkerr(crtTk,"Lipseste ;");
+    } else if(consume(RETURN)){
+        expr();
+        if(consume(SEMICOLON)){
+            return 1;
+        } else tkerr(crtTk,"Lipseste ;");
+    } else {
+        expr();
+        if(consume(SEMICOLON)){
+            return 1;
+        } else tkerr(crtTk,"Lipseste ;");
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+int stmCompound(){
+    Token *initialTk = crtTk;
+    if(consume(LACC)){
+        for(;;){
+            if(declVar()){}
+            else if(stm()){} else break;
+        }
+        if(consume(RACC)){
+            return 1;
+        } else tkerr(crtTk,"Lipseste }");
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+int expr(){
+    Token *initialTk = crtTk;
+    exprAssign();
+    crtTk = initialTk;
+    return 0;
+}
+
+int exprAssign(){
+    Token *initialTk = crtTk;
+    if(exprUnary()){
+        if(consume(ASSIGN)){
+            if(exprAssign()){
+                return 1;
+            }
+        }
+    }
+    crtTk = initialTk;
+    if(exprOr()){
+        return 1;
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+// exprOr: exprAnd exprOrPrim
+int exprOr(){
+    Token *initialTk = crtTk;
+    if(exprAnd()){
+        if(exprOrPrim()){
+            return 1;
+        } else tkerr(crtTk,"Lipseste exprOrPrim");
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+// exprOrPrim: OR exprAnd exprOrPrim | eps
+int exprOrPrim(){
+    Token *initialTk = crtTk;
+    if(consume(OR)){
+        if(exprAnd()){
+            if(exprOrPrim()){
+                return 1;
+            } else tkerr(crtTk,"Lipseste exprOrPrim");
+        } else {
+            tkerr(crtTk,"Lipseste exprAnd");
+        }
+    }
+    return 1;
+}
+
+//exprAnd: exprEq exprAndPrim
+int exprAnd(){
+    Token *initialTk = crtTk;
+    if(exprEq()){
+        if(exprAndPrim()){
+            return 1;
+        } else tkerr(crtTk,"Lipseste exprAndPrim");
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+//exprAndPrim: AND exprEq exprAndPrim | eps
+int exprAndPrim(){
+    Token *initialTk = crtTk;
+    if(consume(AND)){
+        if(exprEq()){
+            if(exprAndPrim()){
+                return 1;
+            } else tkerr(crtTk,"Lipseste exprAndPrim");
+        } else {
+            tkerr(crtTk,"Lipseste exprEq");
+        }
+    }
+    return 1;
+}
+
+
 
 int main() {
     FILE *fin;
@@ -933,3 +1186,12 @@ int main() {
     }
     fclose(fin);
 }
+/*
+ * else tkerr(crtTk,"");
+int name(){
+    Token *initialTk = crtTk;
+    //code
+    crtTk = initialTk;
+    return 0;
+}
+ */
