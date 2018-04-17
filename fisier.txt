@@ -1,9 +1,10 @@
-int sum()
-{	int s=0;
-	int a=25;
-	int b=017;
-	int c=0xAFd9;
-	//int d=08;
-	/*int f=0xG; */
-	put_s("comentariu");
+/*
+testare analizor lexical
+*/
+void main()
+{
+	if(0xc==014)put_s("\"egal\"\t\t(h,o)");
+		else put_s("\"inegal\"\t\t(h,o)");
+	if(20E-1==2.0&&0.2e+1==0x2)put_c('=');  // 2 scris in diverse feluri
+		else put_c('\\');
 }

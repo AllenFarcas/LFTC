@@ -28,7 +28,8 @@ enum { COMMA, SEMICOLON,
        CHAR,ELSE,VOID,
        FOR,INT,
        IF,
-       END
+       END,
+       NEWLINE
     }; // codurile AL
 
 typedef struct _Token {
@@ -100,6 +101,50 @@ void printTokens()
     }
 }
 
+char escapeChar(char c){
+    switch(c) {
+        case 'a' : 
+            return '\a';
+            break;
+        case 'b' : 
+            return '\b';
+            break;
+        case 'f' : 
+            return '\f';
+            break;
+        case 'n' : 
+            return '\n';
+            break;
+        case 'r' : 
+            return '\r';
+            break;
+        case 't' : 
+            return '\t';
+            break;
+        case 'v' : 
+            return '\v';
+            break;
+        case '\'' : 
+            return '\'';
+            break;
+        case '\?' : 
+            return '\?';
+            break;
+        case '\"' : 
+            return '\"';
+            break;
+        case '\\' : 
+            return '\\';
+            break;
+        case '0' : 
+            return '\0';
+            break;
+        default : 
+            printf("Eroare nu exista char escaped cu %c\n",c);
+            break;
+    }
+}
+
 char* createString(char *start, char *stop) {
     char *c;
     int n;
@@ -107,6 +152,12 @@ char* createString(char *start, char *stop) {
     c = (char *)malloc(sizeof(char)*n+1);
     c = strncpy(c,start,sizeof(char)*n);
     c[n+1] = '\0';
+    for(int i=0;i<n;i++) {
+        if(c[i]=='\\'){
+            c[i] = escapeChar(c[i+1]);
+            memmove(c+i+1, c+i+2, strlen(c)-i);
+        }
+    }
     return c;
 }
 
@@ -136,13 +187,13 @@ void printTk(int tkn) {
             printf("COMMA ");
             break;
         case 1 :
-            printf("SEMICOLON\n");
+            printf("SEMICOLON ");
             break;
         case 2 :
             printf("LPAR ");
             break;
         case 3 :
-            printf("RPAR\n");
+            printf("RPAR ");
             break;
         case 4 :
             printf("LBRACKET ");
@@ -154,7 +205,7 @@ void printTk(int tkn) {
             printf("LACC ");
             break;
         case 7 :
-            printf("RACC\n");
+            printf("RACC ");
             break;
         case 8 :
             printf("EQUAL ");
@@ -252,6 +303,9 @@ void printTk(int tkn) {
         case 39 :
             printf("END ");
             break;
+        case 40 :
+            printf("\n");
+            break;
         default:
             printf("Eroare tiparire in printTk se cere valoarea %d\n",tkn);
             break;
@@ -340,16 +394,22 @@ int getNextToken() {
                     pCrtCh++; //consuma caracter
                 } else if ('\''==ch) {
                     state = 44;
-                    pStartCh = pCrtCh; //memoreaza inceputul CHAR-ului
+                    pStartCh = pCrtCh+1; //memoreaza inceputul CHAR-ului
                     pCrtCh++; //consuma caracter
                 } else if ('\"'==ch) {
                     state = 48;
-                    pStartCh = pCrtCh;
+                    pStartCh = pCrtCh+1;
                     pCrtCh++;//consuma caracter
                 } else if (ch == ' ' || ch=='\n' || ch=='\r' || ch=='\t') {
                     state = 0;
                     pCrtCh++; //consuma caracter
-                    if( ch == '\n' || ch == '\r') {
+                    if( ch == '\n') {
+                        lineText++;
+                        addTk(NEWLINE);
+                        printf("===========LINIE NOUA=============");
+                        return NEWLINE;
+                    }
+                    if(ch == '\r') {
                         lineText++;
                     }
                 } else if (ch=='/') {
@@ -591,8 +651,7 @@ int getNextToken() {
                     state = 34;
                     pCrtCh++;//consuma caracter
                 } else {
-                    state = 36; 
-                    pCrtCh++; //consuma caracter
+                    state = 36;
                 }
                 break;
             case 35 :
@@ -706,7 +765,7 @@ int getNextToken() {
                 break;
             case 47 : //============================================CT_CHAR========//
                 tk = addTk(CT_CHAR);
-                int_value = createString(pStartCh, pCrtCh);
+                int_value = createString(pStartCh, pCrtCh-1);
                 tk->i = *int_value;
                 return CT_CHAR;
             case 48 : 
@@ -723,7 +782,7 @@ int getNextToken() {
                 break;
             case 49 :
                 if (ch=='a' || ch=='b' || ch=='f' || ch=='n' || ch=='r' || ch=='t' || ch=='v' || ch=='\'' || ch=='?' || ch=='\"' || ch=='\\' || ch=='0' ) {
-                    state = 49;
+                    state = 50;
                     pCrtCh++; //consuma caracter
                 }
                 break;
@@ -738,7 +797,7 @@ int getNextToken() {
                 break;
             case 51 : //============================================CT_STRING========//
                 tk = addTk(CT_STRING);
-                tk->text = createString(pStartCh, pCrtCh);
+                tk->text = createString(pStartCh, pCrtCh-1);
                 return CT_STRING;
             case 52 :
                 if (ch=='/'){
@@ -803,6 +862,49 @@ int getNextToken() {
     }
 }
 
+int unit() {
+    Token *initialTk = crtTkn;
+    for(;;){
+        if(declStruct()){} 
+        else if (declFunc()) {} 
+        else if (declVar()) {} 
+        else break;
+    }
+    if(consume(END)) {
+        return 1;
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+int declStruct(){
+    Token *initialTk = crtTk;
+    if(consume(STRUCT)){
+        if(consume(ID)){
+            if(consume(LACC)){
+                for(;;){
+                    if(declVar()){}
+                    else break;
+                }
+                if(consume(RACC)){
+                    if(consume(SEMICOLON)){
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+    crtTk = initialTk;
+    return 0;
+}
+
+int declVar(){
+    Token *initialTk = crtTk;
+    //insert code
+    crtTk = initialTk;
+    return 0;
+}
+
 int main() {
     FILE *fin;
     int a;
@@ -819,9 +921,15 @@ int main() {
     }
     pCrtCh=buff;
     while (getNextToken()!= END) {}
-    printf("%s\nBuffLen = %d\n==========THE END=======\n",buff,i);
-    printf("\n\t Analizatorul lexical:\n\n");
+    //printf("%s\nBuffLen = %d\n==========THE END=======\n",buff,i);
+    //printf("\n\t Analizatorul lexical:\n\n");
     printTokens();
-    printf("\n");
+    //printf("\n");
+    Token *crtTkn = tokens;
+    if(unit()){
+        puts("Sintaxa corecta");
+    } else {
+        tkerr(crtTkn,"Syntax error");
+    }
     fclose(fin);
 }
