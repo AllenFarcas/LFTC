@@ -13,7 +13,7 @@ int		count()
 	return n;
 }
 
-void main() 
+void main()
 {
 	put_i(count());
 }
