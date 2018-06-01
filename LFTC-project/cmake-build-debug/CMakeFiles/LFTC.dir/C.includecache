@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/allenpianoman/CLionProjects/LFTC/main.c
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+stdarg.h
+-
+ctype.h
+-
+sys/time.h
+-
+
